@@ -23,6 +23,22 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 
+// Database seeding endpoint (temporary for production deployment)
+const { seedDBWithoutExit } = require('./utils/seed');
+app.get('/api/seed', async (req, res, next) => {
+  try {
+    const result = await seedDBWithoutExit();
+    res.json({
+      success: true,
+      message: 'Database seeded successfully!',
+      usersCreated: result.usersCount,
+      productsCreated: result.productsCount
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Base route for API status verification
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date(), app: 'Cafe Barista API' });

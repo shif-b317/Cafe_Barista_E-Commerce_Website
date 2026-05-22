@@ -1333,39 +1333,44 @@ const imageMapping = {
   'Honey Toast Delight (Japanese Inspired)': 'https://images.unsplash.com/photo-1508737804141-4c3b688e25be?auto=format&fit=crop&q=80&w=600'
 };
 
-const seedDB = async () => {
-  try {
-    const connUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/cafe-barista';
-    await mongoose.connect(connUri);
-    console.log('Seed: Connected to Database');
+const seedDBWithoutExit = async () => {
+  // Clean existing records
+  await User.deleteMany();
+  await Product.deleteMany();
+  await Order.deleteMany();
 
-    // Clean existing records
-    await User.deleteMany();
-    await Product.deleteMany();
-    await Order.deleteMany();
-    console.log('Seed: Cleared old users, products, and orders');
+  // Insert users
+  const createdUsers = await User.create(users);
 
-    // Insert users
-    const createdUsers = await User.create(users);
-    console.log(`Seed: Created ${createdUsers.length} users`);
+  // Insert products with mapped images
+  const productsWithImages = products.map(p => {
+    if (imageMapping[p.name]) {
+      p.image = imageMapping[p.name];
+    }
+    return p;
+  });
 
-    // Insert products with mapped images
-    const productsWithImages = products.map(p => {
-      if (imageMapping[p.name]) {
-        p.image = imageMapping[p.name];
-      }
-      return p;
-    });
-
-    const createdProducts = await Product.create(productsWithImages);
-    console.log(`Seed: Created ${createdProducts.length} products`);
-
-    console.log('Seed: Database seeding completed successfully!');
-    process.exit(0);
-  } catch (error) {
-    console.error(`Seed Error: ${error.message}`);
-    process.exit(1);
-  }
+  const createdProducts = await Product.create(productsWithImages);
+  return { usersCount: createdUsers.length, productsCount: createdProducts.length };
 };
 
-seedDB();
+module.exports = { seedDBWithoutExit };
+
+if (require.main === module) {
+  const seedDB = async () => {
+    try {
+      const connUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/cafe-barista';
+      await mongoose.connect(connUri);
+      console.log('Seed: Connected to Database');
+      const res = await seedDBWithoutExit();
+      console.log(`Seed: Created ${res.usersCount} users`);
+      console.log(`Seed: Created ${res.productsCount} products`);
+      console.log('Seed: Database seeding completed successfully!');
+      process.exit(0);
+    } catch (error) {
+      console.error(`Seed Error: ${error.message}`);
+      process.exit(1);
+    }
+  };
+  seedDB();
+}
