@@ -1,0 +1,15 @@
+{
+  "name": "cafe-barista",
+  "version": "1.0.0",
+  "description": "Premium Full-Stack Cafe Barista Bakery & Cafe E-Commerce Web Application",
+  "scripts": {
+    "install-all": "npm install && npm install --prefix server && npm install --prefix client",
+    "seed": "npm run seed --prefix server",
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

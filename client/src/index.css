@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-oat-milk text-forest-floor selection:bg-peony-blush selection:text-forest-floor;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+/* Smooth page transitions and global classes */
+.font-editorial {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Custom styling for premium UI details */
+.card-hover-effect {
+  @apply transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-premium;
+}
+
+/* Custom scrollbars matching the color scheme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F7F1E6; /* Oat Milk */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E8C5C0; /* Peony Blush */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C26D53; /* Canyon Clay */
+}
