@@ -115,7 +115,7 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    const validStatuses = ['Pending', 'Preparing', 'Baking', 'Out for Delivery', 'Delivered'];
+    const validStatuses = ['Pending', 'Preparing', 'Baking', 'Out for Delivery', 'Delivered', 'Cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }

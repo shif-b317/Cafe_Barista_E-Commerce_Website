@@ -74,7 +74,7 @@ exports.getProductById = async (req, res) => {
 // @access  Private/Admin
 exports.createProduct = async (req, res) => {
   try {
-    const { name, price, rating, category, description, image, isFeatured, isTrending, isBestSeller } = req.body;
+    const { name, price, rating, category, description, image, isFeatured, isTrending, isBestSeller, discount, stock, isAvailable } = req.body;
 
     const product = new Product({
       name,
@@ -85,7 +85,10 @@ exports.createProduct = async (req, res) => {
       image,
       isFeatured: isFeatured || false,
       isTrending: isTrending || false,
-      isBestSeller: isBestSeller || false
+      isBestSeller: isBestSeller || false,
+      discount: discount || 0,
+      stock: stock !== undefined ? stock : 99,
+      isAvailable: isAvailable !== undefined ? isAvailable : true
     });
 
     const createdProduct = await product.save();
@@ -101,26 +104,29 @@ exports.createProduct = async (req, res) => {
 // @access  Private/Admin
 exports.updateProduct = async (req, res) => {
   try {
-    const { name, price, rating, category, description, image, isFeatured, isTrending, isBestSeller } = req.body;
+    const { name, price, rating, category, description, image, isFeatured, isTrending, isBestSeller, discount, stock, isAvailable } = req.body;
 
     const product = await Product.findById(req.params.id);
 
-    if (product) {
-      product.name = name || product.name;
-      product.price = price !== undefined ? price : product.price;
-      product.rating = rating !== undefined ? rating : product.rating;
-      product.category = category || product.category;
-      product.description = description || product.description;
-      product.image = image || product.image;
-      product.isFeatured = isFeatured !== undefined ? isFeatured : product.isFeatured;
-      product.isTrending = isTrending !== undefined ? isTrending : product.isTrending;
-      product.isBestSeller = isBestSeller !== undefined ? isBestSeller : product.isBestSeller;
+  if (product) {
+    product.name = name || product.name;
+    product.price = price !== undefined ? price : product.price;
+    product.rating = rating !== undefined ? rating : product.rating;
+    product.category = category || product.category;
+    product.description = description || product.description;
+    product.image = image || product.image;
+    product.isFeatured = isFeatured !== undefined ? isFeatured : product.isFeatured;
+    product.isTrending = isTrending !== undefined ? isTrending : product.isTrending;
+    product.isBestSeller = isBestSeller !== undefined ? isBestSeller : product.isBestSeller;
+    product.discount = discount !== undefined ? discount : product.discount;
+    product.stock = stock !== undefined ? stock : product.stock;
+    product.isAvailable = isAvailable !== undefined ? isAvailable : product.isAvailable;
 
-      const updatedProduct = await product.save();
-      res.json({ success: true, data: updatedProduct });
-    } else {
-      res.status(404).json({ success: false, message: 'Product not found' });
-    }
+    const updatedProduct = await product.save();
+    res.json({ success: true, data: updatedProduct });
+  } else {
+    res.status(404).json({ success: false, message: 'Product not found' });
+  }
   } catch (error) {
     console.error(error);
     res.status(400).json({ success: false, message: error.message });

@@ -49,6 +49,21 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide a product image URL']
   },
+  discount: {
+    type: Number,
+    default: 0,
+    min: [0, 'Discount cannot be less than 0'],
+    max: [100, 'Discount cannot exceed 100']
+  },
+  stock: {
+    type: Number,
+    default: 99,
+    min: [0, 'Stock cannot be less than 0']
+  },
+  isAvailable: {
+    type: Boolean,
+    default: true
+  },
   isFeatured: {
     type: Boolean,
     default: false

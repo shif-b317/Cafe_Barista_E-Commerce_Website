@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
-import { ArrowLeft, Save, Loader2, Image, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Image as ImageIcon, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const AddEditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading, isAdmin } = useAuth();
   const isEditMode = !!id;
 
   // Form states
@@ -18,6 +16,9 @@ const AddEditProduct = () => {
   const [category, setCategory] = useState('Cakes');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState('');
+  const [discount, setDiscount] = useState('0');
+  const [stock, setStock] = useState('99');
+  const [isAvailable, setIsAvailable] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
@@ -45,17 +46,10 @@ const AddEditProduct = () => {
     'Desserts'
   ];
 
-  // Redirect if not admin
-  useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
-      navigate('/login');
-    }
-  }, [user, isAdmin, authLoading, navigate]);
-
   // Load product if editing
   useEffect(() => {
     const fetchProductDetails = async () => {
-      if (isEditMode && user && isAdmin) {
+      if (isEditMode) {
         try {
           const res = await api.get(`/products/${id}`);
           const p = res.data.data;
@@ -65,24 +59,27 @@ const AddEditProduct = () => {
           setCategory(p.category);
           setDescription(p.description);
           setImage(p.image);
-          setIsFeatured(p.isFeatured);
-          setIsTrending(p.isTrending);
-          setIsBestSeller(p.isBestSeller);
+          setDiscount(p.discount || '0');
+          setStock(p.stock !== undefined ? p.stock : '99');
+          setIsAvailable(p.isAvailable !== undefined ? p.isAvailable : true);
+          setIsFeatured(p.isFeatured || false);
+          setIsTrending(p.isTrending || false);
+          setIsBestSeller(p.isBestSeller || false);
         } catch (err) {
-          console.error('Error loading product details for editing:', err);
-          setError('Failed to load item recipe.');
+          console.error('Error loading product details:', err);
+          setError('Failed to load product details.');
         } finally {
           setLoadingProduct(false);
         }
       }
     };
     fetchProductDetails();
-  }, [id, isEditMode, user, isAdmin]);
+  }, [id, isEditMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !price || !category || !description || !image) {
-      setError('Please fill in all required recipe fields.');
+      setError('Please fill in all required fields.');
       return;
     }
 
@@ -96,6 +93,9 @@ const AddEditProduct = () => {
       category,
       description,
       image,
+      discount: parseInt(discount) || 0,
+      stock: parseInt(stock) || 0,
+      isAvailable,
       isFeatured,
       isTrending,
       isBestSeller
@@ -110,17 +110,17 @@ const AddEditProduct = () => {
       navigate('/admin/products');
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Failed to save product recipe details.');
+      setError(err.response?.data?.message || 'Failed to save product details.');
     } finally {
       setSaving(false);
     }
   };
 
-  if (authLoading || loadingProduct) {
+  if (loadingProduct) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-4">
         <Loader2 className="w-8 h-8 text-[#C26D53] animate-spin" />
-        <span className="text-sm text-[#4E5A46]/60">
+        <span className="text-sm text-[#4E5A46]/60 font-serif italic">
           {isEditMode ? 'Loading product recipe...' : 'Setting up recipe form...'}
         </span>
       </div>
@@ -128,15 +128,15 @@ const AddEditProduct = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+    <div className="max-w-4xl mx-auto px-6 py-12 space-y-8">
       {/* Title Header */}
       <div className="flex items-center gap-4">
         <Link to="/admin/products" className="text-[#4E5A46] hover:text-[#C26D53]">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <span className="text-xs font-bold tracking-widest text-[#C26D53] uppercase">Administrative Area</span>
-          <h1 className="font-serif text-3xl font-semibold text-[#4E5A46] mt-1">
+          <span className="text-2xs font-extrabold tracking-widest text-[#C26D53] uppercase font-sans">Administrative Area</span>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#4E5A46] mt-0.5">
             {isEditMode ? 'Modify Product Recipe' : 'Add New Cafe Delicacy'}
           </h1>
         </div>
@@ -152,21 +152,21 @@ const AddEditProduct = () => {
       <form onSubmit={handleSubmit} className="bg-[#F7F1E6] border border-[#4E5A46]/10 rounded-3xl p-6 sm:p-8 shadow-soft grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Name */}
-        <div className="md:col-span-2 space-y-1">
-          <label className="text-2xs text-[#4E5A46]/60 uppercase font-semibold">Treat / Coffee Name *</label>
+        <div className="md:col-span-2 space-y-1.5">
+          <label className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider pl-1">Product Name *</label>
           <input
             type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Lavender Infused Scone"
-            className="w-full bg-[#E8C5C0]/20 border border-[#4E5A46]/10 rounded-xl py-2.5 px-4 text-sm text-[#4E5A46] focus:outline-none focus:ring-1 focus:ring-[#C26D53]"
+            placeholder="e.g. Belgian Chocolate Truffle Cake"
+            className="w-full bg-[#E8C5C0]/15 border border-[#4E5A46]/10 rounded-2xl py-3 px-4 text-sm text-[#4E5A46] focus:outline-none focus:border-[#C26D53] transition-colors"
           />
         </div>
 
         {/* Price */}
-        <div className="space-y-1">
-          <label className="text-2xs text-[#4E5A46]/60 uppercase font-semibold">Unit Price (₹) *</label>
+        <div className="space-y-1.5">
+          <label className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider pl-1">Unit Price (₹) *</label>
           <input
             type="number"
             step="0.01"
@@ -175,13 +175,27 @@ const AddEditProduct = () => {
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder="0.00"
-            className="w-full bg-[#E8C5C0]/20 border border-[#4E5A46]/10 rounded-xl py-2.5 px-4 text-sm text-[#4E5A46] focus:outline-none focus:ring-1 focus:ring-[#C26D53]"
+            className="w-full bg-[#E8C5C0]/15 border border-[#4E5A46]/10 rounded-2xl py-3 px-4 text-sm text-[#4E5A46] focus:outline-none focus:border-[#C26D53] transition-colors"
+          />
+        </div>
+
+        {/* Discount */}
+        <div className="space-y-1.5">
+          <label className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider pl-1">Discount (%)</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={discount}
+            onChange={(e) => setDiscount(e.target.value)}
+            placeholder="0"
+            className="w-full bg-[#E8C5C0]/15 border border-[#4E5A46]/10 rounded-2xl py-3 px-4 text-sm text-[#4E5A46] focus:outline-none focus:border-[#C26D53] transition-colors"
           />
         </div>
 
         {/* Rating */}
-        <div className="space-y-1">
-          <label className="text-2xs text-[#4E5A46]/60 uppercase font-semibold">Initial Rating (1-5)</label>
+        <div className="space-y-1.5">
+          <label className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider pl-1">Initial Rating (1-5)</label>
           <input
             type="number"
             step="0.1"
@@ -190,17 +204,31 @@ const AddEditProduct = () => {
             value={rating}
             onChange={(e) => setRating(e.target.value)}
             placeholder="4.5"
-            className="w-full bg-[#E8C5C0]/20 border border-[#4E5A46]/10 rounded-xl py-2.5 px-4 text-sm text-[#4E5A46] focus:outline-none focus:ring-1 focus:ring-[#C26D53]"
+            className="w-full bg-[#E8C5C0]/15 border border-[#4E5A46]/10 rounded-2xl py-3 px-4 text-sm text-[#4E5A46] focus:outline-none focus:border-[#C26D53] transition-colors"
+          />
+        </div>
+
+        {/* Stock */}
+        <div className="space-y-1.5">
+          <label className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider pl-1">Quantity in Stock *</label>
+          <input
+            type="number"
+            min="0"
+            required
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+            placeholder="99"
+            className="w-full bg-[#E8C5C0]/15 border border-[#4E5A46]/10 rounded-2xl py-3 px-4 text-sm text-[#4E5A46] focus:outline-none focus:border-[#C26D53] transition-colors"
           />
         </div>
 
         {/* Category */}
-        <div className="space-y-1">
-          <label className="text-2xs text-[#4E5A46]/60 uppercase font-semibold">Menu Category *</label>
+        <div className="space-y-1.5">
+          <label className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider pl-1">Menu Category *</label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full bg-[#E8C5C0]/20 border border-[#4E5A46]/10 rounded-xl py-2.5 px-4 text-sm text-[#4E5A46] focus:outline-none focus:ring-1 focus:ring-[#C26D53]"
+            className="w-full bg-[#E8C5C0]/15 border border-[#4E5A46]/10 rounded-2xl py-3 px-4 text-sm text-[#4E5A46] focus:outline-none focus:border-[#C26D53] transition-colors"
           >
             {categories.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -208,9 +236,26 @@ const AddEditProduct = () => {
           </select>
         </div>
 
+        {/* Availability Toggle */}
+        <div className="space-y-1.5 flex flex-col justify-end pb-3 pl-1">
+          <span className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider">Availability Status</span>
+          <button
+            type="button"
+            onClick={() => setIsAvailable(!isAvailable)}
+            className={`w-full max-w-[200px] mt-2 py-2 px-4 border rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              isAvailable
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+            }`}
+          >
+            {isAvailable ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            {isAvailable ? 'Available to Order' : 'Out of Stock / Hide'}
+          </button>
+        </div>
+
         {/* Image URL */}
-        <div className="space-y-1">
-          <label className="text-2xs text-[#4E5A46]/60 uppercase font-semibold">Image URL Link *</label>
+        <div className="md:col-span-2 space-y-1.5">
+          <label className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider pl-1">Image URL Link *</label>
           <div className="relative">
             <input
               type="url"
@@ -218,30 +263,47 @@ const AddEditProduct = () => {
               value={image}
               onChange={(e) => setImage(e.target.value)}
               placeholder="https://images.unsplash.com/photo-..."
-              className="w-full bg-[#E8C5C0]/20 border border-[#4E5A46]/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-[#4E5A46] focus:outline-none focus:ring-1 focus:ring-[#C26D53]"
+              className="w-full bg-[#E8C5C0]/15 border border-[#4E5A46]/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-[#4E5A46] focus:outline-none focus:border-[#C26D53] transition-colors"
             />
-            <Image className="w-4 h-4 text-[#4E5A46]/50 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+            <ImageIcon className="w-4.5 h-4.5 text-[#4E5A46]/50 absolute left-3.5 top-3.5" />
           </div>
         </div>
 
+        {/* Image Preview Block */}
+        {image && (
+          <div className="md:col-span-2 space-y-2">
+            <span className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider pl-1">Image Preview</span>
+            <div className="w-full max-w-sm h-48 border border-[#4E5A46]/10 bg-[#E8C5C0]/5 rounded-3xl overflow-hidden shadow-sm">
+              <img
+                src={image}
+                alt="Product Preview"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=600';
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Description */}
-        <div className="md:col-span-2 space-y-1">
-          <label className="text-2xs text-[#4E5A46]/60 uppercase font-semibold">Recipe & Serving Description *</label>
+        <div className="md:col-span-2 space-y-1.5">
+          <label className="text-2xs text-[#4E5A46]/60 uppercase font-extrabold tracking-wider pl-1">Product Description *</label>
           <textarea
             required
             rows="4"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Detailed descriptions about ingredients, textures, size, etc."
-            className="w-full bg-[#E8C5C0]/20 border border-[#4E5A46]/10 rounded-xl py-2.5 px-4 text-sm text-[#4E5A46] focus:outline-none focus:ring-1 focus:ring-[#C26D53] resize-none"
+            placeholder="Introduce details about ingredients, flavors, textures..."
+            className="w-full bg-[#E8C5C0]/15 border border-[#4E5A46]/10 rounded-2xl py-3 px-4 text-sm text-[#4E5A46] focus:outline-none focus:border-[#C26D53] transition-colors resize-none"
           />
         </div>
 
         {/* Promotional Checkboxes */}
-        <div className="md:col-span-2 bg-[#A3AE9A]/15 border border-[#A3AE9A]/20 p-5 rounded-2xl space-y-3">
-          <h4 className="font-serif text-xs font-semibold text-[#4E5A46] uppercase flex items-center gap-1.5 mb-1">
-            <Sparkles className="w-4 h-4 text-[#C26D53]" />
-            Promotional Badging
+        <div className="md:col-span-2 bg-[#A3AE9A]/15 border border-[#A3AE9A]/20 p-5 rounded-3xl space-y-3">
+          <h4 className="font-serif text-xs font-bold text-[#4E5A46] uppercase flex items-center gap-1.5 mb-1">
+            <Sparkles className="w-4.5 h-4.5 text-[#C26D53]" />
+            Promotional Tags
           </h4>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -251,9 +313,9 @@ const AddEditProduct = () => {
                 type="checkbox"
                 checked={isFeatured}
                 onChange={(e) => setIsFeatured(e.target.checked)}
-                className="w-4 h-4 rounded text-[#C26D53] border-[#4E5A46]/30 focus:ring-[#C26D53] bg-[#F7F1E6]"
+                className="w-4.5 h-4.5 rounded text-[#C26D53] border-[#4E5A46]/30 focus:ring-[#C26D53] bg-[#F7F1E6]"
               />
-              <span>Show in Featured Section</span>
+              <span>Show in Featured Slider</span>
             </label>
 
             {/* Trending */}
@@ -262,9 +324,9 @@ const AddEditProduct = () => {
                 type="checkbox"
                 checked={isTrending}
                 onChange={(e) => setIsTrending(e.target.checked)}
-                className="w-4 h-4 rounded text-[#C26D53] border-[#4E5A46]/30 focus:ring-[#C26D53] bg-[#F7F1E6]"
+                className="w-4.5 h-4.5 rounded text-[#C26D53] border-[#4E5A46]/30 focus:ring-[#C26D53] bg-[#F7F1E6]"
               />
-              <span>Show as Trending</span>
+              <span>Tag as Trending</span>
             </label>
 
             {/* Bestseller */}
@@ -273,7 +335,7 @@ const AddEditProduct = () => {
                 type="checkbox"
                 checked={isBestSeller}
                 onChange={(e) => setIsBestSeller(e.target.checked)}
-                className="w-4 h-4 rounded text-[#C26D53] border-[#4E5A46]/30 focus:ring-[#C26D53] bg-[#F7F1E6]"
+                className="w-4.5 h-4.5 rounded text-[#C26D53] border-[#4E5A46]/30 focus:ring-[#C26D53] bg-[#F7F1E6]"
               />
               <span>Tag as Bestseller</span>
             </label>
@@ -292,14 +354,14 @@ const AddEditProduct = () => {
           <button
             type="submit"
             disabled={saving}
-            className="bg-[#C26D53] hover:bg-[#C26D53]/90 text-[#F7F1E6] font-semibold px-8 py-3 rounded-full flex items-center justify-center gap-2 shadow-sm transition-all duration-200"
+            className="bg-[#C26D53] hover:bg-[#C26D53]/95 text-[#F7F1E6] font-semibold px-8 py-3 rounded-full flex items-center justify-center gap-2 shadow-sm transition-all duration-200"
           >
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Recipe
+                Save Product
               </>
             )}
           </button>

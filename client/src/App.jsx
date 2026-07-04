@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation, Link } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
@@ -15,21 +15,33 @@ import Register from './pages/Register';
 import Profile from './pages/Profile';
 
 // Import Admin Pages
+import AdminRoute from './components/admin/AdminRoute';
+import AdminLayout from './layouts/AdminLayout';
+import AdminLogin from './pages/admin/AdminLogin';
 import Dashboard from './pages/admin/Dashboard';
 import ProductManagement from './pages/admin/ProductManagement';
 import AddEditProduct from './pages/admin/AddEditProduct';
 import OrderManagement from './pages/admin/OrderManagement';
+import CategoryManagement from './pages/admin/CategoryManagement';
+import CouponManagement from './pages/admin/CouponManagement';
+import ReviewsManagement from './pages/admin/ReviewsManagement';
+import CustomersList from './pages/admin/CustomersList';
+import SettingsPage from './pages/admin/SettingsPage';
+import SalesAnalytics from './pages/admin/SalesAnalytics';
 
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 
 function App() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
     <AuthProvider>
       <CartProvider>
         <div className="flex flex-col min-h-screen bg-[#F7F1E6] text-[#4E5A46] font-sans selection:bg-[#E8C5C0] selection:text-[#4E5A46]">
-          {/* Main Navigation */}
-          <Navbar />
+          {/* Main Navigation (hidden on admin pages) */}
+          {!isAdminRoute && <Navbar />}
 
           {/* Primary View Area */}
           <main className="flex-grow">
@@ -47,12 +59,23 @@ function App() {
               <Route path="/order-tracking/:id" element={<OrderTracking />} />
               <Route path="/profile" element={<Profile />} />
 
-              {/* Protected Admin Routes */}
-              <Route path="/admin/dashboard" element={<Dashboard />} />
-              <Route path="/admin/products" element={<ProductManagement />} />
-              <Route path="/admin/products/new" element={<AddEditProduct />} />
-              <Route path="/admin/products/edit/:id" element={<AddEditProduct />} />
-              <Route path="/admin/orders" element={<OrderManagement />} />
+              {/* Admin Login Route */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+
+              {/* Protected Admin Routes (Nested Layout) */}
+              <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="products" element={<ProductManagement />} />
+                <Route path="products/new" element={<AddEditProduct />} />
+                <Route path="products/edit/:id" element={<AddEditProduct />} />
+                <Route path="orders" element={<OrderManagement />} />
+                <Route path="categories" element={<CategoryManagement />} />
+                <Route path="coupons" element={<CouponManagement />} />
+                <Route path="reviews" element={<ReviewsManagement />} />
+                <Route path="customers" element={<CustomersList />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="analytics" element={<SalesAnalytics />} />
+              </Route>
 
               {/* Catch-all fallback */}
               <Route path="*" element={
@@ -67,15 +90,12 @@ function App() {
             </Routes>
           </main>
 
-          {/* Site Footer */}
-          <Footer />
+          {/* Site Footer (hidden on admin pages) */}
+          {!isAdminRoute && <Footer />}
         </div>
       </CartProvider>
     </AuthProvider>
   );
 }
-
-// Inline fallback Link export just in case
-import { Link } from 'react-router-dom';
 
 export default App;

@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const Category = require('../models/Category');
+const Coupon = require('../models/Coupon');
+const Review = require('../models/Review');
+const Settings = require('../models/Settings');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
@@ -1338,6 +1342,10 @@ const seedDBWithoutExit = async () => {
   await User.deleteMany();
   await Product.deleteMany();
   await Order.deleteMany();
+  await Category.deleteMany();
+  await Coupon.deleteMany();
+  await Review.deleteMany();
+  await Settings.deleteMany();
 
   // Insert users
   const createdUsers = await User.create(users);
@@ -1351,6 +1359,57 @@ const seedDBWithoutExit = async () => {
   });
 
   const createdProducts = await Product.create(productsWithImages);
+
+  // Seed default settings
+  await Settings.create({
+    cafeName: 'Café Barista',
+    logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&q=80&w=200',
+    contactEmail: 'info@cafebarista.com',
+    phone: '+91 8763456297',
+    deliveryCharges: 50,
+    gstPercentage: 5,
+    openingHours: '8:00 AM - 10:00 PM'
+  });
+
+  // Seed default categories
+  const categoriesList = [
+    { name: 'Cakes', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=600', description: 'Delectable, sweet, layered cakes and whole desserts.', isActive: true },
+    { name: 'Pastries', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=600', description: 'Light, flaky baked pastries and sweet treats.', isActive: true },
+    { name: 'Cookies', image: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&q=80&w=600', description: 'Crisp and chewy gourmet cookies baked fresh daily.', isActive: true },
+    { name: 'Sandwiches', image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&q=80&w=600', description: 'Gourmet toasted sandwiches with fresh ingredients.', isActive: true },
+    { name: 'Coffee', image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600', description: 'Premium espresso drinks and specialty brewed coffees.', isActive: true },
+    { name: 'Tea', image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&q=80&w=600', description: 'Organic herbal teas, matcha, and refreshing infusions.', isActive: true }
+  ];
+  await Category.create(categoriesList);
+
+  // Seed default coupons
+  const couponsList = [
+    { code: 'WELCOME10', discount: 10, expiryDate: new Date('2028-12-31'), minOrder: 200, isActive: true },
+    { code: 'COZY20', discount: 20, expiryDate: new Date('2028-12-31'), minOrder: 500, isActive: true },
+    { code: 'BARISTA50', discount: 50, expiryDate: new Date('2028-12-31'), minOrder: 1000, isActive: true }
+  ];
+  await Coupon.create(couponsList);
+
+  // Seed default reviews for first few products
+  const normalUser = createdUsers.find(u => u.role === 'customer') || createdUsers[0];
+  const reviewsList = [
+    {
+      product: createdProducts[0]._id,
+      user: normalUser._id,
+      rating: 5,
+      comment: 'Absolutely divine! The chocolate truffle is rich, decadent, and perfectly textured.',
+      status: 'Approved'
+    },
+    {
+      product: createdProducts[0]._id,
+      user: normalUser._id,
+      rating: 4,
+      comment: 'Very tasty, but slightly too sweet for my taste. Highly recommended for chocolate lovers.',
+      status: 'Approved'
+    }
+  ];
+  await Review.create(reviewsList);
+
   return { usersCount: createdUsers.length, productsCount: createdProducts.length };
 };
 
